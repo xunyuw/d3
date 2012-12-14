@@ -287,7 +287,7 @@ suite.addBatch({
       },
       "area of a polygon": function(p) {
         var area = p.area({type: "Polygon", coordinates: [[[-122, 37], [-71, 42], [-80, 25], [-122, 37]]]});
-        assert.inDelta(area, 109021.503, 1e-3);
+        assert.inDelta(area, 109403.096, 1e-3);
       },
       "bounds of a line string": function(p) {
         var bounds = p.bounds({type: "LineString", coordinates: [[-122, 37], [-74, 40], [-100, 0]]});
@@ -298,8 +298,8 @@ suite.addBatch({
       },
       "centroid of a line string": function(p) {
         var centroid = p.centroid({type: "LineString", coordinates: [[-122, 37], [-74, 40], [-100, 0]]});
-        assert.inDelta(centroid[0], 434.655, 1e-3);
-        assert.inDelta(centroid[1], 397.940, 1e-3);
+        assert.inDelta(centroid[0], 434.667, 1e-3);
+        assert.inDelta(centroid[1], 397.897, 1e-3);
       }
     },
 
@@ -762,18 +762,37 @@ suite.addBatch({
     },
 
     "with an Albers projection and adaptive resampling": {
-      topic: function(path) {
-        return path()
+      "correctly resamples near the poles": function(path) {
+        var p = path()
             .context(testContext)
             .projection(_.geo.albers()
               .scale(140)
               .rotate([0, 0])
               .precision(1));
-      },
-      "correctly resamples near the poles": function(p) {
         p({type: "LineString", coordinates: [[0, 88], [180, 89]]});
         assert.isTrue(testContext.buffer().filter(function(d) { return d.type === "lineTo"; }).length > 1);
         p({type: "LineString", coordinates: [[180, 90], [1, 89.5]]});
+        assert.isTrue(testContext.buffer().filter(function(d) { return d.type === "lineTo"; }).length > 1);
+      },
+      "rotate([11.5, 285])": function(path) {
+        var p = path()
+            .context(testContext)
+            .projection(_.geo.albers()
+              .scale(140)
+              .rotate([11.5, 285])
+              .precision(1));
+        p({type: "LineString", coordinates: [[170, 20], [170, 0]]});
+        assert.isTrue(testContext.buffer().filter(function(d) { return d.type === "lineTo"; }).length > 1);
+      },
+      "wavy projection": function(path) {
+        var p = path()
+            .context(testContext)
+            .projection(_.geo.projection(function(λ, φ) {
+                return [λ, Math.sin(λ * 4)];
+              })
+              .scale(140)
+              .precision(1));
+        p({type: "LineString", coordinates: [[-45, 0], [45, 0]]});
         assert.isTrue(testContext.buffer().filter(function(d) { return d.type === "lineTo"; }).length > 1);
       }
     },
