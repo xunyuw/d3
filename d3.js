@@ -2111,29 +2111,56 @@ d3 = function() {
   }
   d3.geo.bounds = d3_geo_bounds(d3_identity);
   function d3_geo_bounds(projectStream) {
-    var x0, y0, x1, y1;
+    var x0, y0, x1, y1, x_, invert;
     var bound = {
-      point: boundPoint,
+      point: point,
       lineStart: d3_noop,
       lineEnd: d3_noop,
       polygonStart: function() {
-        bound.lineEnd = boundPolygonLineEnd;
+        bound.point = ringPoint;
+        bound.lineStart = ringStart;
+        bound.lineEnd = ringEnd;
+        d3_geo_areaSum = 0;
+        d3_geo_area.polygonStart();
       },
       polygonEnd: function() {
-        bound.point = boundPoint;
+        d3_geo_area.polygonEnd();
+        bound.point = point;
+        bound.lineStart = bound.lineEnd = d3_noop;
       }
     };
-    function boundPoint(x, y) {
-      if (x < x0) x0 = x;
-      if (x > x1) x1 = x;
+    function point(x, y) {
+      if (!invert && (invert = Math.abs(x - x_) > 180)) {
+        if (x < x0) x1 = x; else x0 = x;
+      } else if (invert) {
+        if (x1 < x && x < x0) {
+          if (x - x1 > x - x0) x1 = x; else x0 = x;
+        }
+      } else {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+      }
       if (y < y0) y0 = y;
       if (y > y1) y1 = y;
+      x_ = x;
     }
-    function boundPolygonLineEnd() {
+    function ringPoint(x, y) {
+      d3_geo_area.point(x, y);
+      point(x, y);
+    }
+    function ringStart() {
+      d3_geo_area.lineStart();
+    }
+    function ringEnd() {
+      d3_geo_area.lineEnd();
+      if (Math.atan2(d3_geo_areaRingV, d3_geo_areaRingU) < 0) x0 = -(x1 = 180), y0 = -(y1 = 90), 
+      invert = false;
       bound.point = bound.lineEnd = d3_noop;
     }
     return function(feature) {
       y1 = x1 = -(x0 = y0 = Infinity);
+      x_ = NaN;
+      invert = false;
       d3.geo.stream(feature, projectStream(bound));
       return [ [ x0, y0 ], [ x1, y1 ] ];
     };
@@ -3337,6 +3364,20 @@ d3 = function() {
       nextPoint(x00, y00);
     };
   }
+  var d3_geo_pathBoundsX0, d3_geo_pathBoundsY0, d3_geo_pathBoundsX1, d3_geo_pathBoundsY1;
+  var d3_geo_pathBounds = {
+    point: d3_geo_pathBoundsPoint,
+    lineStart: d3_noop,
+    lineEnd: d3_noop,
+    polygonStart: d3_noop,
+    polygonEnd: d3_noop
+  };
+  function d3_geo_pathBoundsPoint(x, y) {
+    if (x < d3_geo_pathBoundsX0) d3_geo_pathBoundsX0 = x;
+    if (x > d3_geo_pathBoundsX1) d3_geo_pathBoundsX1 = x;
+    if (y < d3_geo_pathBoundsY0) d3_geo_pathBoundsY0 = y;
+    if (y > d3_geo_pathBoundsY1) d3_geo_pathBoundsY1 = y;
+  }
   function d3_geo_pathBuffer() {
     var pointCircle = d3_geo_pathCircle(4.5), buffer = [];
     var stream = {
@@ -3502,7 +3543,9 @@ d3 = function() {
       return d3_geo_centroidZ ? [ d3_geo_centroidX / d3_geo_centroidZ, d3_geo_centroidY / d3_geo_centroidZ ] : undefined;
     };
     path.bounds = function(object) {
-      return d3_geo_bounds(projectStream)(object);
+      d3_geo_pathBoundsX1 = d3_geo_pathBoundsY1 = -(d3_geo_pathBoundsX0 = d3_geo_pathBoundsY0 = Infinity);
+      d3.geo.stream(object, projectStream(d3_geo_pathBounds));
+      return [ [ d3_geo_pathBoundsX0, d3_geo_pathBoundsY0 ], [ d3_geo_pathBoundsX1, d3_geo_pathBoundsY1 ] ];
     };
     path.projection = function(_) {
       if (!arguments.length) return projection;
