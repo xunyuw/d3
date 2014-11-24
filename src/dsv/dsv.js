@@ -1,13 +1,13 @@
 import "../arrays/set";
 import "../xhr/xhr";
 
-function d3_dsv(delimiter, mimeType) {
+d3.dsv = function(delimiter, mimeType) {
   var reFormat = new RegExp("[\"" + delimiter + "\n]"),
       delimiterCode = delimiter.charCodeAt(0);
 
   function dsv(url, row, callback) {
     if (arguments.length < 3) callback = row, row = null;
-    var xhr = d3.xhr(url, mimeType, callback);
+    var xhr = d3_xhr(url, mimeType, row == null ? response : typedResponse(row), callback);
 
     xhr.row = function(_) {
       return arguments.length
@@ -15,7 +15,7 @@ function d3_dsv(delimiter, mimeType) {
           : row;
     };
 
-    return xhr.row(row);
+    return xhr;
   }
 
   function response(request) {
@@ -71,7 +71,7 @@ function d3_dsv(delimiter, mimeType) {
         } else if (c === 10) {
           eol = true;
         }
-        return text.substring(j + 1, i).replace(/""/g, "\"");
+        return text.slice(j + 1, i).replace(/""/g, "\"");
       }
 
       // common case: find next delimiter or newline
@@ -80,11 +80,11 @@ function d3_dsv(delimiter, mimeType) {
         if (c === 10) eol = true; // \n
         else if (c === 13) { eol = true; if (text.charCodeAt(I) === 10) ++I, ++k; } // \r|\r\n
         else if (c !== delimiterCode) continue;
-        return text.substring(j, I - k);
+        return text.slice(j, I - k);
       }
 
       // special case: last token before EOF
-      return text.substring(j);
+      return text.slice(j);
     }
 
     while ((t = token()) !== EOF) {
@@ -93,7 +93,7 @@ function d3_dsv(delimiter, mimeType) {
         a.push(t);
         t = token();
       }
-      if (f && !(a = f(a, n++))) continue;
+      if (f && (a = f(a, n++)) == null) continue;
       rows.push(a);
     }
 
@@ -133,4 +133,4 @@ function d3_dsv(delimiter, mimeType) {
   }
 
   return dsv;
-}
+};

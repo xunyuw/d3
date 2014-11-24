@@ -6,7 +6,7 @@ var suite = vows.describe("d3.scale.sqrt");
 
 suite.addBatch({
   "sqrt": {
-    topic: load("scale/sqrt", "interpolate/hsl").document(), // beware instanceof d3_Color
+    topic: load("scale/sqrt", "interpolate/hsl"), // beware instanceof d3_Color
 
     "domain": {
       "defaults to [0, 1]": function(d3) {
@@ -38,6 +38,10 @@ suite.addBatch({
         assert.equal(x(-5), "#ff4b4b");
         assert.equal(x(50), "#4ba54b");
         assert.equal(x(75), "#229122");
+      },
+      "preserves specified domain exactly, with no floating point error": function(d3) {
+        var x = d3.scale.sqrt().domain([0, 5]);
+        assert.deepEqual(x.domain(), [0, 5]);
       }
     },
 
@@ -168,6 +172,16 @@ suite.addBatch({
       }
     },
 
+    "tickFormat": {
+      "if count is not specified, defaults to 10": function(d3) {
+        var x = d3.scale.sqrt();
+        assert.strictEqual(x.tickFormat()(Math.PI), "3.1");
+        assert.strictEqual(x.tickFormat(1)(Math.PI), "3");
+        assert.strictEqual(x.tickFormat(10)(Math.PI), "3.1");
+        assert.strictEqual(x.tickFormat(100)(Math.PI), "3.14");
+      }
+    },
+
     "nice": {
       "can nice the domain, extending it to round numbers": function(d3) {
         var x = d3.scale.sqrt().domain([1.1, 10.9]).nice(), f = d3.format(".6f");
@@ -186,6 +200,10 @@ suite.addBatch({
         assert.deepEqual(x.domain().map(f), [1, 1, 2, 3, 11]);
         var x = d3.scale.sqrt().domain([123.1, 1, 2, 3, -.9]).nice();
         assert.deepEqual(x.domain().map(f), [130, 1, 2, 3, "-10.000000"]);
+      },
+      "preserves specified domain exactly, with no floating point error": function(d3) {
+        var x = d3.scale.sqrt().domain([0, 5]).nice();
+        assert.deepEqual(x.domain(), [0, 5]);
       }
     },
 

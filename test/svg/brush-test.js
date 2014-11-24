@@ -21,6 +21,38 @@ suite.addBatch({
       }
     },
 
+    "clamp": {
+      "returns null when no scales are attached": function(brush) {
+        assert.isNull(brush().clamp());
+      },
+      "returns a single boolean if only x is defined": function(brush) {
+        var b = brush().x(_.scale.linear());
+        assert.isTrue(b.clamp());
+      },
+      "returns a single boolean if only y is defined": function(brush) {
+        var b = brush().y(_.scale.linear());
+        assert.isTrue(b.clamp());
+      },
+      "returns one-dimensional array if both x and y are defined": function(brush) {
+        var b = brush().x(_.scale.linear()).y(_.scale.linear());
+        assert.deepEqual(b.clamp(), [true, true]);
+      },
+      "takes a single boolean if only x is defined": function(brush) {
+        var b = brush().x(_.scale.linear()).clamp(false);
+        assert.isFalse(b.clamp());
+      },
+      "takes a single boolean if only y is defined": function(brush) {
+        var b = brush().y(_.scale.linear()).clamp(false);
+        assert.isFalse(b.clamp());
+      },
+      "takes a one-dimensional array if both x and y are defined": function(brush) {
+        var b = brush().x(_.scale.linear()).y(_.scale.linear()).clamp([false, true]);
+        assert.deepEqual(b.clamp(), [false, true]);
+        b.clamp([true, false]);
+        assert.deepEqual(b.clamp(), [true, false]);
+      }
+    },
+
     "extent": {
       "returns null when no scales are attached": function(brush) {
         assert.isNull(brush().extent());
@@ -56,6 +88,24 @@ suite.addBatch({
             extent = b.extent();
         assert.strictEqual(extent[0], lo);
         assert.strictEqual(extent[1], hi);
+      }
+    },
+
+    "empty": {
+      "returns true if and only if any defined extent is empty": function(brush) {
+        var b = brush();
+        assert.strictEqual(b.empty(), false); // x and y are undefined
+        var b = brush().x(_.scale.linear());
+        assert.strictEqual(b.empty(), true); // x is empty, y is undefined
+        assert.strictEqual(b.extent([0, 1]).empty(), false); // x is non-empty, y is undefined
+        var b = brush().y(_.scale.linear());
+        assert.strictEqual(b.empty(), true); // x is undefined, y is empty
+        assert.strictEqual(b.extent([0, 1]).empty(), false); // x is undefined, y is non-empty
+        var b = brush().x(_.scale.linear()).y(_.scale.linear());
+        assert.strictEqual(b.empty(), true); // x is empty, y is empty
+        assert.strictEqual(b.extent([[0, 0], [1, 0]]).empty(), true); // x is non-empty, y is empty
+        assert.strictEqual(b.extent([[0, 0], [0, 1]]).empty(), true); // x is empty, y is non-empty
+        assert.strictEqual(b.extent([[0, 0], [1, 1]]).empty(), false); // x is non-empty, y is non-empty
       }
     }
   }

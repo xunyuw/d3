@@ -1,16 +1,18 @@
-var globals = ["document", "window", "d3"],
-    globalValues = {};
+var document = require("jsdom").jsdom(),
+    globals = {};
 
-globals.forEach(function(g) {
-  if (g in global) globalValues[g] = global[g];
-});
+// Stash old globals.
+if ("d3" in global) globals.d3 = global.d3;
+if ("window" in global) globals.window = global.window;
+if ("document" in global) globals.document = global.document;
 
-require("./globals");
-require("./d3");
+// Set temporary globals to pretend we’re in a browser.
+global.window = document.parentWindow;
+global.document = document;
 
-module.exports = d3;
+module.exports = require("./d3");
 
-globals.forEach(function(g) {
-  if (g in globalValues) global[g] = globalValues[g];
-  else delete global[g];
-});
+// Restore old globals.
+if ("d3" in globals) global.d3 = globals.d3; else delete global.d3;
+if ("window" in globals) global.window = globals.window; else delete global.window;
+if ("document" in globals) global.document = globals.document; else delete global.document;

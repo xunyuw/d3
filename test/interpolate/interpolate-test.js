@@ -6,15 +6,20 @@ var suite = vows.describe("d3.interpolate");
 
 suite.addBatch({
   "interpolate": {
-    topic: load("interpolate/interpolate").document(),
+    topic: load("interpolate/interpolate"),
 
-    "when a and b are numbers": {
+    "when b is a number": {
       "interpolates numbers": function(d3) {
-        assert.strictEqual(d3.interpolate(2, 12)(.4), 6);
+        assert.strictEqual(d3.interpolate(2, 12)(.25), 4.5);
+      },
+      "coerces a to a number": function(d3) {
+        assert.strictEqual(d3.interpolate("", 1)(.5), .5);
+        assert.strictEqual(d3.interpolate("2", 12)(.25), 4.5);
+        assert.strictEqual(d3.interpolate([2], 12)(.25), 4.5);
       }
     },
 
-    "when a and b are color strings": {
+    "when b is a color string": {
       "interpolates RGB values and returns a hexadecimal string": function(d3) {
         assert.strictEqual(d3.interpolate("#ff0000", "#008000")(.4), "#993300");
       },
@@ -26,10 +31,13 @@ suite.addBatch({
       },
       "interpolates decimal HSL colors in RGB": function(d3) {
         assert.strictEqual(d3.interpolate("hsl(0,100%,50%)", "hsl(120,100%,25%)")(.4), "#993300");
+      },
+      "coerces a to a color": function(d3) {
+        assert.strictEqual(d3.interpolate({toString: function() { return "red"; }}, "green")(.4), "#993300");
       }
     },
 
-    "when a and b are color objects": {
+    "when b is a color object": {
       "interpolates RGB values and returns a hexadecimal string": function(d3) {
         assert.strictEqual(d3.interpolate(d3.rgb(255, 0, 0), d3.rgb(0, 128, 0))(.4), "#993300");
       },
@@ -41,16 +49,19 @@ suite.addBatch({
       },
       "interpolates d3.hcl in RGB": function(d3) {
         assert.strictEqual(d3.interpolate(d3.hcl("red"), d3.hcl("green"))(.4), "#993300");
+      },
+      "coerces a to a color": function(d3) {
+        assert.strictEqual(d3.interpolate({toString: function() { return "red"; }}, "green")(.4), "#993300");
       }
     },
 
-    "when a and b are strings": {
+    "when b is a string": {
       "interpolates matching numbers in both strings": function(d3) {
         assert.strictEqual(d3.interpolate(" 10/20 30", "50/10 100 ")(.4), "26/16 58 ");
       },
-      "if a and b are coercible to numbers, interpolates numbers rather than strings": function(d3) {
-        assert.strictEqual(d3.interpolate("1.", "2.")(.5), 1.5);
-        assert.strictEqual(d3.interpolate("1e+3", "1e+4")(.5), 5500);
+      "if b is coercible to a number, still returns a string": function(d3) {
+        assert.strictEqual(d3.interpolate("1.", "2.")(.5), "1.5");
+        assert.strictEqual(d3.interpolate("1e+3", "1e+4")(.5), "5500");
       },
       "preserves non-numbers in string b": function(d3) {
         assert.strictEqual(d3.interpolate(" 10/20 30", "50/10 foo ")(.4), "26/16 foo ");
@@ -60,16 +71,19 @@ suite.addBatch({
       },
       "preserves equal-value numbers in both strings": function(d3) {
         assert.strictEqual(d3.interpolate(" 10/20 100 20", "50/10 100, 20 ")(.4), "26/16 100, 20 ");
+      },
+      "coerces a to a string": function(d3) {
+        assert.strictEqual(d3.interpolate({toString: function() { return "1."; }}, "2.")(.5), "1.5");
       }
     },
 
-    "when a and b are arrays": {
+    "when b is an array": {
       "interpolates each element in b": function(d3) {
-        assert.strictEqual(JSON.stringify(d3.interpolate([2, 4], [12, 24])(.4)), "[6,12]");
+        assert.strictEqual(JSON.stringify(d3.interpolate([2, 4], [12, 24])(.25)), "[4.5,9]");
       },
       "interpolates arrays, even when both a and b are coercible to numbers": function(d3) {
-        assert.strictEqual(JSON.stringify(d3.interpolate([2], [12])(.4)), "[6]");
-        assert.strictEqual(JSON.stringify(d3.interpolate([[2]], [[12]])(.4)), "[[6]]");
+        assert.strictEqual(JSON.stringify(d3.interpolate([2], [12])(.25)), "[4.5]");
+        assert.strictEqual(JSON.stringify(d3.interpolate([[2]], [[12]])(.25)), "[[4.5]]");
       },
       "reuses the returned array during interpolation": function(d3) {
         var i = d3.interpolate([2], [12]);
@@ -77,29 +91,19 @@ suite.addBatch({
       }
     },
 
-    "when a and b are objects": {
+    "when b is an object": {
       "interpolates each property in b": function(d3) {
-        assert.deepEqual(d3.interpolate({foo: 2, bar: 4}, {foo: 12, bar: 24})(.4), {foo: 6, bar: 12});
+        assert.deepEqual(d3.interpolate({foo: 2, bar: 4}, {foo: 12, bar: 24})(.25), {foo: 4.5, bar: 9});
       },
-      "interpolates arrays, even when both a and b are coercible to numbers": function(d3) {
-        var two = new Number(2), twelve = new Number(12);
-        two.foo = "2px";
-        twelve.foo = "12px";
-        assert.deepEqual(d3.interpolate(two, twelve)(.4), {foo: "6px"});
+      "interpolates numbers if b is coercible to a number (!isNaN(+b))": function(d3) {
+        assert.strictEqual(d3.interpolate(new Number(2), new Number(12))(.25), 4.5);
+        assert.strictEqual(d3.interpolate(new Date(2012, 0, 1), new Date(2013, 0, 1))(.5), +new Date(2012, 6, 2, 1));
+        assert.strictEqual(d3.interpolate(1, null)(.4), .6); // +null = 0
+        assert.isNaN(d3.interpolate("blue", null)(.4));
       },
       "reuses the returned object during interpolation": function(d3) {
         var i = d3.interpolate({foo: 2, bar: 4}, {foo: 12, bar: 24});
         assert.strictEqual(i(.2), i(.4));
-      }
-    },
-
-    "when a and b are different types": {
-      "coerces both types to strings": function(d3) {
-        assert.strictEqual(d3.interpolate("2", 12)(.4), 6);
-        assert.strictEqual(d3.interpolate("2px", 12)(.4), 6);
-        assert.strictEqual(d3.interpolate([2], 12)(.4), 6);
-        assert.strictEqual(d3.interpolate({valueOf: function() { return 2; }}, 12)(.4), 6);
-        assert.strictEqual(d3.interpolate({toString: function() { return 2; }}, 12)(.4), 6);
       }
     },
 

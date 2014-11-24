@@ -36,12 +36,6 @@ module.exports = {
     }
   },
 
-  // The order here is a bit brittle: because the transition has zero delay,
-  // it's invoking the start event immediately for all nodes, rather than
-  // pushing each node onto the timer queue (which would reverse the order of
-  // callbacks). The order in which tweens are invoked is undefined, so perhaps
-  // we should sort the expected and actual values before comparing.
-
   "defines the corresponding style tween": function(result) {
     assert.typeOf(result.transition.tween("style.background-color"), "function");
   },
@@ -49,11 +43,11 @@ module.exports = {
     assert.equal(result.fails, 0);
   },
   "invokes the tween function": function(result) {
-    assert.deepEqual(result.data, ["green", "red"], "expected data, got {actual}");
-    assert.deepEqual(result.index, [1, 0], "expected index, got {actual}");
-    assert.deepEqual(result.value, ["#008000", "#ff0000"], "expected value, got {actual}");
-    assert.domEqual(result.context[0], result.selection[0][1], "expected this, got {actual}");
-    assert.domEqual(result.context[1], result.selection[0][0], "expected this, got {actual}");
+    assert.deepEqual(result.data, ["red", "green"], "expected data, got {actual}");
+    assert.deepEqual(result.index, [0, 1], "expected index, got {actual}");
+    assert.deepEqual(result.value, ["rgb(255, 0, 0)", "rgb(0, 128, 0)"], "expected value, got {actual}");
+    assert.domEqual(result.context[0], result.selection[0][0], "expected this, got {actual}");
+    assert.domEqual(result.context[1], result.selection[0][1], "expected this, got {actual}");
   },
 
   "end": {
@@ -62,10 +56,10 @@ module.exports = {
       result.transition.each("end", function(d, i) { if (i >= 1) cb(null, result); });
     },
     "uses the returned interpolator": function(result) {
-      assert.equal(result.selection[0][1].style.getPropertyValue("background-color"), "#0000ff");
+      assert.equal(result.selection[0][1].style.getPropertyValue("background-color"), "rgb(0, 0, 255)");
     },
     "does nothing if the interpolator is falsey": function(result) {
-      assert.equal(result.selection[0][0].style.getPropertyValue("background-color"), "#ff0000");
+      assert.equal(result.selection[0][0].style.getPropertyValue("background-color"), "rgb(255, 0, 0)");
     }
   }
 };

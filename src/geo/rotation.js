@@ -18,17 +18,23 @@ d3.geo.rotation = function(rotate) {
   return forward;
 };
 
+function d3_geo_identityRotation(λ, φ) {
+  return [λ > π ? λ - τ : λ < -π ? λ + τ : λ, φ];
+}
+
+d3_geo_identityRotation.invert = d3_geo_equirectangular;
+
 // Note: |δλ| must be < 2π
 function d3_geo_rotation(δλ, δφ, δγ) {
   return δλ ? (δφ || δγ ? d3_geo_compose(d3_geo_rotationλ(δλ), d3_geo_rotationφγ(δφ, δγ))
     : d3_geo_rotationλ(δλ))
     : (δφ || δγ ? d3_geo_rotationφγ(δφ, δγ)
-    : d3_geo_equirectangular);
+    : d3_geo_identityRotation);
 }
 
 function d3_geo_forwardRotationλ(δλ) {
   return function(λ, φ) {
-    return λ += δλ, [λ > π ? λ - 2 * π : λ < -π ? λ + 2 * π : λ, φ];
+    return λ += δλ, [λ > π ? λ - τ : λ < -π ? λ + τ : λ, φ];
   };
 }
 
@@ -52,7 +58,7 @@ function d3_geo_rotationφγ(δφ, δγ) {
         k = z * cosδφ + x * sinδφ;
     return [
       Math.atan2(y * cosδγ - k * sinδγ, x * cosδφ - z * sinδφ),
-      Math.asin(Math.max(-1, Math.min(1, k * cosδγ + y * sinδγ)))
+      d3_asin(k * cosδγ + y * sinδγ)
     ];
   }
 
@@ -64,7 +70,7 @@ function d3_geo_rotationφγ(δφ, δγ) {
         k = z * cosδγ - y * sinδγ;
     return [
       Math.atan2(y * cosδγ + z * sinδγ, x * cosδφ + k * sinδφ),
-      Math.asin(Math.max(-1, Math.min(1, k * cosδφ - x * sinδφ)))
+      d3_asin(k * cosδφ - x * sinδφ)
     ];
   };
 

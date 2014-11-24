@@ -12,15 +12,6 @@ suite.addBatch({
       "defaults to the empty array": function(ordinal) {
         assert.isEmpty(ordinal().domain());
       },
-      "new input values are added to the domain": function(ordinal) {
-        var x = ordinal().range(["foo", "bar"]);
-        assert.equal(x(0), "foo");
-        assert.deepEqual(x.domain(), ["0"]);
-        assert.equal(x(1), "bar");
-        assert.deepEqual(x.domain(), ["0", "1"]);
-        assert.equal(x(0), "foo");
-        assert.deepEqual(x.domain(), ["0", "1"]);
-      },
       "setting the domain forgets previous values": function(ordinal) {
         var x = ordinal().range(["foo", "bar"]);
         assert.equal(x(1), "foo");
@@ -36,22 +27,6 @@ suite.addBatch({
         assert.equal(x(new String("foo")), 42);
         assert.equal(x({toString: function() { return "foo"; }}), 42);
         assert.equal(x({toString: function() { return "bar"; }}), 43);
-      },
-      "orders domain values by the order in which they are seen": function(ordinal) {
-        var x = ordinal();
-        x("foo");
-        x("bar");
-        x("baz");
-        assert.deepEqual(x.domain(), ["foo", "bar", "baz"]);
-        x.domain(["baz", "bar"]);
-        x("foo");
-        assert.deepEqual(x.domain(), ["baz", "bar", "foo"]);
-        x.domain(["baz", "foo"]);
-        assert.deepEqual(x.domain(), ["baz", "foo"]);
-        x.domain([]);
-        x("foo");
-        x("bar");
-        assert.deepEqual(x.domain(), ["foo", "bar"]);
       },
       "does not coerce domain values to strings": function(ordinal) {
         var x = ordinal().domain([0, 1]);
@@ -72,6 +47,31 @@ suite.addBatch({
         var x = ordinal();
         assert.isEmpty(x.range());
         assert.isUndefined(x(0));
+      },
+      "new input values are added to the domain": function(ordinal) {
+        var x = ordinal().range(["foo", "bar"]);
+        assert.equal(x(0), "foo");
+        assert.deepEqual(x.domain(), ["0"]);
+        assert.equal(x(1), "bar");
+        assert.deepEqual(x.domain(), ["0", "1"]);
+        assert.equal(x(0), "foo");
+        assert.deepEqual(x.domain(), ["0", "1"]);
+      },
+      "orders domain values by the order in which they are seen": function(ordinal) {
+        var x = ordinal();
+        x("foo");
+        x("bar");
+        x("baz");
+        assert.deepEqual(x.domain(), ["foo", "bar", "baz"]);
+        x.domain(["baz", "bar"]);
+        x("foo");
+        assert.deepEqual(x.domain(), ["baz", "bar", "foo"]);
+        x.domain(["baz", "foo"]);
+        assert.deepEqual(x.domain(), ["baz", "foo"]);
+        x.domain([]);
+        x("foo");
+        x("bar");
+        assert.deepEqual(x.domain(), ["foo", "bar"]);
       },
       "setting the range remembers previous values": function(ordinal) {
         var x = ordinal();
@@ -109,29 +109,51 @@ suite.addBatch({
       "computes discrete points in a continuous range": function(ordinal) {
         var x = ordinal().domain(["a", "b", "c"]).rangePoints([0, 120]);
         assert.deepEqual(x.range(), [0, 60, 120]);
-        assert.equal(x.rangeBand(), 0);
         var x = ordinal().domain(["a", "b", "c"]).rangePoints([0, 120], 1);
         assert.deepEqual(x.range(), [20, 60, 100]);
-        assert.equal(x.rangeBand(), 0);
         var x = ordinal().domain(["a", "b", "c"]).rangePoints([0, 120], 2);
         assert.deepEqual(x.range(), [30, 60, 90]);
-        assert.equal(x.rangeBand(), 0);
       },
       "correctly handles singleton domains": function(ordinal) {
         var x = ordinal().domain(["a"]).rangePoints([0, 120]);
         assert.deepEqual(x.range(), [60]);
-        assert.equal(x.rangeBand(), 0);
+        assert.isUndefined(x("b"));
+        assert.deepEqual(x.domain(), ["a"]);
       },
       "can be set to a descending range": function(ordinal) {
         var x = ordinal().domain(["a", "b", "c"]).rangePoints([120, 0]);
         assert.deepEqual(x.range(), [120, 60,0]);
-        assert.equal(x.rangeBand(), 0);
         var x = ordinal().domain(["a", "b", "c"]).rangePoints([120, 0], 1);
         assert.deepEqual(x.range(), [100, 60, 20]);
-        assert.equal(x.rangeBand(), 0);
         var x = ordinal().domain(["a", "b", "c"]).rangePoints([120, 0], 2);
         assert.deepEqual(x.range(), [90, 60, 30]);
+      },
+      "has a rangeBand of zero": function(ordinal) {
+        var x = ordinal().domain(["a", "b", "c"]).rangePoints([0, 120]);
         assert.equal(x.rangeBand(), 0);
+        var x = ordinal().domain(["a", "b", "c"]).rangePoints([0, 120], 1);
+        assert.equal(x.rangeBand(), 0);
+        var x = ordinal().domain(["a", "b", "c"]).rangePoints([0, 120], 2);
+        assert.equal(x.rangeBand(), 0);
+        var x = ordinal().domain(["a"]).rangePoints([0, 120]);
+        assert.equal(x.rangeBand(), 0);
+        var x = ordinal().domain(["a", "b", "c"]).rangePoints([120, 0]);
+        assert.equal(x.rangeBand(), 0);
+        var x = ordinal().domain(["a", "b", "c"]).rangePoints([120, 0], 1);
+        assert.equal(x.rangeBand(), 0);
+        var x = ordinal().domain(["a", "b", "c"]).rangePoints([120, 0], 2);
+        assert.equal(x.rangeBand(), 0);
+      },
+      "returns undefined for values outside the domain": function(ordinal) {
+        var x = ordinal().domain(["a", "b", "c"]).rangePoints([0, 1]);
+        assert.isUndefined(x("d"));
+        assert.isUndefined(x("e"));
+        assert.isUndefined(x("f"));
+      },
+      "does not implicitly add values to the domain": function(ordinal) {
+        var x = ordinal().domain(["a", "b", "c"]).rangePoints([0, 1]);
+        x("d"), x("e");
+        assert.deepEqual(x.domain(), ["a", "b", "c"]);
       }
     },
 
@@ -167,6 +189,17 @@ suite.addBatch({
         var x = ordinal().domain(["a", "b", "c"]).rangeBands([120, 0], .2, 1);
         assert.deepEqual(x.range(), [75, 50, 25]);
         assert.equal(x.rangeBand(), 20);
+      },
+      "returns undefined for values outside the domain": function(ordinal) {
+        var x = ordinal().domain(["a", "b", "c"]).rangeBands([0, 1]);
+        assert.isUndefined(x("d"));
+        assert.isUndefined(x("e"));
+        assert.isUndefined(x("f"));
+      },
+      "does not implicitly add values to the domain": function(ordinal) {
+        var x = ordinal().domain(["a", "b", "c"]).rangeBands([0, 1]);
+        x("d"), x("e");
+        assert.deepEqual(x.domain(), ["a", "b", "c"]);
       }
     },
 
@@ -194,6 +227,17 @@ suite.addBatch({
         var x = ordinal().domain(["a", "b", "c"]).rangeRoundBands([120, 0], .2, 1);
         assert.deepEqual(x.range(), [75, 50, 25]);
         assert.equal(x.rangeBand(), 20);
+      },
+      "returns undefined for values outside the domain": function(ordinal) {
+        var x = ordinal().domain(["a", "b", "c"]).rangeRoundBands([0, 1]);
+        assert.isUndefined(x("d"));
+        assert.isUndefined(x("e"));
+        assert.isUndefined(x("f"));
+      },
+      "does not implicitly add values to the domain": function(ordinal) {
+        var x = ordinal().domain(["a", "b", "c"]).rangeRoundBands([0, 1]);
+        x("d"), x("e");
+        assert.deepEqual(x.domain(), ["a", "b", "c"]);
       }
     },
 

@@ -1,12 +1,12 @@
 import "../arrays/map";
-import "../core/array";
+import "../core/subclass";
+import "../core/true";
 import "../event/dispatch";
 import "../event/timer";
-import "../interpolate/ease";
 import "../selection/selection";
 
 function d3_transition(groups, id) {
-  d3_arraySubclass(groups, d3_transitionPrototype);
+  d3_subclass(groups, d3_transitionPrototype);
 
   groups.id = id; // Note: read-only!
 
@@ -16,11 +16,12 @@ function d3_transition(groups, id) {
 var d3_transitionPrototype = [],
     d3_transitionId = 0,
     d3_transitionInheritId,
-    d3_transitionInherit = {ease: d3_ease_cubicInOut, delay: 0, duration: 250};
+    d3_transitionInherit;
 
 d3_transitionPrototype.call = d3_selectionPrototype.call;
 d3_transitionPrototype.empty = d3_selectionPrototype.empty;
 d3_transitionPrototype.node = d3_selectionPrototype.node;
+d3_transitionPrototype.size = d3_selectionPrototype.size;
 
 d3.transition = function(selection) {
   return arguments.length
@@ -53,7 +54,6 @@ function d3_transitionNode(node, i, id, inherit) {
 
     transition = lock[id] = {
       tween: new d3_Map,
-      event: d3.dispatch("start", "end"), // TODO construct lazily?
       time: time,
       ease: inherit.ease,
       delay: inherit.delay,
@@ -65,19 +65,19 @@ function d3_transitionNode(node, i, id, inherit) {
     d3.timer(function(elapsed) {
       var d = node.__data__,
           ease = transition.ease,
-          event = transition.event,
           delay = transition.delay,
           duration = transition.duration,
+          timer = d3_timer_active,
           tweened = [];
 
-      return delay <= elapsed
-          ? start(elapsed)
-          : d3.timer(start, delay, time), 1;
+      timer.t = delay + time;
+      if (delay <= elapsed) return start(elapsed - delay);
+      timer.c = start;
 
       function start(elapsed) {
         if (lock.active > id) return stop();
         lock.active = id;
-        event.start.call(node, d, i);
+        transition.event && transition.event.start.call(node, d, i);
 
         transition.tween.forEach(function(key, value) {
           if (value = value.call(node, d, i)) {
@@ -85,14 +85,16 @@ function d3_transitionNode(node, i, id, inherit) {
           }
         });
 
-        if (!tick(elapsed)) d3.timer(tick, 0, time);
-        return 1;
+        d3.timer(function() { // defer to end of current frame
+          timer.c = tick(elapsed || 1) ? d3_true : tick;
+          return 1;
+        }, 0, time);
       }
 
       function tick(elapsed) {
         if (lock.active !== id) return stop();
 
-        var t = (elapsed - delay) / duration,
+        var t = elapsed / duration,
             e = ease(t),
             n = tweened.length;
 
@@ -101,9 +103,8 @@ function d3_transitionNode(node, i, id, inherit) {
         }
 
         if (t >= 1) {
-          stop();
-          event.end.call(node, d, i);
-          return 1;
+          transition.event && transition.event.end.call(node, d, i);
+          return stop();
         }
       }
 
@@ -113,7 +114,5 @@ function d3_transitionNode(node, i, id, inherit) {
         return 1;
       }
     }, 0, time);
-
-    return transition;
   }
 }

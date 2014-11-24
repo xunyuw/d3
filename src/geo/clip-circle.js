@@ -1,17 +1,19 @@
+import "../math/abs";
 import "../math/trigonometry";
 import "cartesian";
 import "clip";
 import "circle";
 import "spherical";
+import "point-in-polygon";
 
 // Clip features against a small circle centered at [0°, 0°].
 function d3_geo_clipCircle(radius) {
   var cr = Math.cos(radius),
       smallRadius = cr > 0,
-      notHemisphere = Math.abs(cr) > ε, // TODO optimise for this common case
+      notHemisphere = abs(cr) > ε, // TODO optimise for this common case
       interpolate = d3_geo_circleInterpolate(radius, 6 * d3_radians);
 
-  return d3_geo_clip(visible, clipLine, interpolate);
+  return d3_geo_clip(visible, clipLine, interpolate, smallRadius ? [0, -radius] : [-π, radius - π]);
 
   function visible(λ, φ) {
     return Math.cos(λ) * Math.cos(φ) > cr;
@@ -145,7 +147,7 @@ function d3_geo_clipCircle(radius) {
         z;
     if (λ1 < λ0) z = λ0, λ0 = λ1, λ1 = z;
     var δλ = λ1 - λ0,
-        polar = Math.abs(δλ - π) < ε,
+        polar = abs(δλ - π) < ε,
         meridian = polar || δλ < ε;
 
     if (!polar && φ1 < φ0) z = φ0, φ0 = φ1, φ1 = z;
@@ -153,7 +155,7 @@ function d3_geo_clipCircle(radius) {
     // Check that the first point is between a and b.
     if (meridian
         ? polar
-          ? φ0 + φ1 > 0 ^ q[1] < (Math.abs(q[0] - λ0) < ε ? φ0 : φ1)
+          ? φ0 + φ1 > 0 ^ q[1] < (abs(q[0] - λ0) < ε ? φ0 : φ1)
           : φ0 <= q[1] && q[1] <= φ1
         : δλ > π ^ (λ0 <= q[0] && q[0] <= λ1)) {
       var q1 = d3_geo_cartesianScale(u, (-w + t) / uu);

@@ -31,11 +31,23 @@ suite.addBatch({
           [-64.66070178517852, 18.33986913231323]
         ]]}), 4.890516e-13, 1e-13);
       },
+      "zero area": function(area) {
+        assert.equal(area({
+          "type": "Polygon",
+          "coordinates": [[
+            [96.79142432523281, 5.262704519048153],
+            [96.81065389253769, 5.272455576551362],
+            [96.82988345984256, 5.272455576551362],
+            [96.81065389253769, 5.272455576551362],
+            [96.79142432523281, 5.262704519048153]
+          ]]
+        }), 0);
+      },
       "semilune": function(area) {
         assert.inDelta(area({type: "Polygon", coordinates: [[[0, 0], [0, 90], [90, 0], [0, 0]]]}), π / 2, 1e-6);
       },
       "lune": function(area) {
-        assert.equal(area({type: "Polygon", coordinates: [[[0, 0], [0, 90], [90, 0], [0, -90], [0, 0]]]}), π);
+        assert.inDelta(area({type: "Polygon", coordinates: [[[0, 0], [0, 90], [90, 0], [0, -90], [0, 0]]]}), π, 1e-6);
       },
       "hemispheres": {
         "North": function(area) {
@@ -45,10 +57,10 @@ suite.addBatch({
           assert.inDelta(area({type: "Polygon", coordinates: [[[0, 0], [90, 0], [180, 0], [-90, 0], [0, 0]]]}), 2 * π, 1e-6);
         },
         "East": function(area) {
-          assert.equal(area({type: "Polygon", coordinates: [[[0, 0], [0, 90], [180, 0], [0, -90], [0, 0]]]}), 2 * π);
+          assert.inDelta(area({type: "Polygon", coordinates: [[[0, 0], [0, 90], [180, 0], [0, -90], [0, 0]]]}), 2 * π, 1e-6);
         },
         "West": function(area) {
-          assert.equal(area({type: "Polygon", coordinates: [[[0, 0], [0, -90], [180, 0], [0, 90], [0, 0]]]}), 2 * π);
+          assert.inDelta(area({type: "Polygon", coordinates: [[[0, 0], [0, -90], [180, 0], [0, 90], [0, 0]]]}), 2 * π, 1e-6);
         }
       },
       "graticule outline": {

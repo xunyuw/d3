@@ -1,10 +1,11 @@
 import "../core/functor";
-import "../svg/line";
+import "../math/abs";
 import "geom";
+import "point";
 
 d3.geom.quadtree = function(points, x1, y1, x2, y2) {
-  var x = d3_svg_lineX,
-      y = d3_svg_lineY,
+  var x = d3_geom_pointX,
+      y = d3_geom_pointY,
       compat;
 
   // For backwards-compatibility.
@@ -77,7 +78,7 @@ d3.geom.quadtree = function(points, x1, y1, x2, y2) {
           // point we are adding, we leave the point associated with the
           // internal node while adding the new point to a child node. This
           // avoids infinite recursion.
-          if ((Math.abs(nx - x) + Math.abs(ny - y)) < .01) {
+          if ((abs(nx - x) + abs(ny - y)) < .01) {
             insertChild(n, d, x, y, x1, y1, x2, y2);
           } else {
             var nPoint = n.point;
@@ -147,14 +148,17 @@ d3.geom.quadtree = function(points, x1, y1, x2, y2) {
     return arguments.length ? (y = _, quadtree) : y;
   };
 
+  quadtree.extent = function(_) {
+    if (!arguments.length) return x1 == null ? null : [[x1, y1], [x2, y2]];
+    if (_ == null) x1 = y1 = x2 = y2 = null;
+    else x1 = +_[0][0], y1 = +_[0][1], x2 = +_[1][0], y2 = +_[1][1];
+    return quadtree;
+  };
+
   quadtree.size = function(_) {
-    if (!arguments.length) return x1 == null ? null : [x2, y2];
-    if (_ == null) {
-      x1 = y1 = x2 = y2 = null;
-    } else {
-      x1 = y1 = 0;
-      x2 = +_[0], y2 = +_[1];
-    }
+    if (!arguments.length) return x1 == null ? null : [x2 - x1, y2 - y1];
+    if (_ == null) x1 = y1 = x2 = y2 = null;
+    else x1 = y1 = 0, x2 = +_[0], y2 = +_[1];
     return quadtree;
   };
 

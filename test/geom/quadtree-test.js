@@ -14,6 +14,9 @@ suite.addBatch({
       "has no defined size": function(q) {
         assert.isNull(q.size());
       },
+      "has no defined extent": function(q) {
+        assert.isNull(q.extent());
+      },
       "has the default x-accessor, d[0]": function(q) {
         assert.strictEqual(q.x()([42, 43]), 42);
       },
@@ -26,10 +29,10 @@ suite.addBatch({
             n = 0;
         q.visit(function(node, x1, y1, x2, y2) {
           assert.deepEqual(node.point, point);
-          assert.isUndefined(node[0]);
-          assert.isUndefined(node[1]);
-          assert.isUndefined(node[2]);
-          assert.isUndefined(node[3]);
+          assert.isUndefined(node.nodes[0]);
+          assert.isUndefined(node.nodes[1]);
+          assert.isUndefined(node.nodes[2]);
+          assert.isUndefined(node.nodes[3]);
           assert.isTrue(node.leaf);
           ++n;
         });
@@ -43,10 +46,10 @@ suite.addBatch({
             n = 0;
         q.visit(function(node, x1, y1, x2, y2) {
           assert.deepEqual(node.point, point);
-          assert.isUndefined(node[0]);
-          assert.isUndefined(node[1]);
-          assert.isUndefined(node[2]);
-          assert.isUndefined(node[3]);
+          assert.isUndefined(node.nodes[0]);
+          assert.isUndefined(node.nodes[1]);
+          assert.isUndefined(node.nodes[2]);
+          assert.isUndefined(node.nodes[3]);
           assert.isTrue(node.leaf);
           ++n;
         });
@@ -57,10 +60,10 @@ suite.addBatch({
             n = 0;
         q.visit(function(node, x1, y1, x2, y2) {
           assert.isNull(node.point);
-          assert.isUndefined(node[0]);
-          assert.isUndefined(node[1]);
-          assert.isUndefined(node[2]);
-          assert.isUndefined(node[3]);
+          assert.isUndefined(node.nodes[0]);
+          assert.isUndefined(node.nodes[1]);
+          assert.isUndefined(node.nodes[2]);
+          assert.isUndefined(node.nodes[3]);
           assert.isTrue(node.leaf);
           ++n;
         });
